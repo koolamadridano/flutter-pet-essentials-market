@@ -25,9 +25,12 @@ const createListing = async (req, res) => {
 
 const getListings = async (req, res) => {
     try {
-        const { accountId, availability, all } = req.query;
+        const { accountId, availability } = req.query;
         try {
-            if(accountId === undefined) {
+            console.log(accountId === undefined);
+            console.log(accountId === null);
+
+            if(accountId === undefined || accountId === null ) {
                 return Listing
                     .find({ availability })
                     .sort({ _id: -1 })
