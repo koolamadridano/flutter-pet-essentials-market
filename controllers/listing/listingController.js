@@ -25,11 +25,21 @@ const createListing = async (req, res) => {
 
 const getListings = async (req, res) => {
     try {
-        const { accountId, availability } = req.query;
+        const { accountId, availability, all } = req.query;
         try {
-            const value = await Listing.find({ accountId, availability })
-                .sort({ _id: -1 });
-            return res.status(200).json(value);
+            if(all) {
+                return Listing
+                    .find()
+                    .sort({ _id: -1 })
+                    .then((value) => res.status(200).json(value))
+                    .catch((err) => res.status(400).json(err));
+            }
+            return Listing
+                .find({ accountId, availability })
+                .sort({ _id: -1 })
+                .then((value) => res.status(200).json(value))
+                .catch((err) => res.status(400).json(err));
+            
         } catch (err) {
             return res.status(400).json(err);
         }
