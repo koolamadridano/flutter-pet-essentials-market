@@ -27,9 +27,9 @@ const getListings = async (req, res) => {
     try {
         const { accountId, availability, all } = req.query;
         try {
-            if(all) {
+            if(accountId === undefined) {
                 return Listing
-                    .find()
+                    .find({ availability })
                     .sort({ _id: -1 })
                     .then((value) => res.status(200).json(value))
                     .catch((err) => res.status(400).json(err));
