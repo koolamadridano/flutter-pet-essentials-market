@@ -1,6 +1,7 @@
 import 'package:app/const/colors.dart';
 import 'package:app/const/material.dart';
 import 'package:app/controllers/listingController.dart';
+import 'package:app/controllers/profileController.dart';
 import 'package:app/widget/bottomsheet.dart';
 import 'package:app/widget/snapshot.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -20,11 +21,15 @@ class MerchantPostedItems extends StatefulWidget {
 
 class _MerchantPostedItemsState extends State<MerchantPostedItems> {
   final _listing = Get.put(ListingController());
+  final _profile = Get.put(ProfileController());
+
   late Future _getListings;
 
   Future<void> onRefreshListings() async {
     setState(() {
-      _getListings = _listing.getListings();
+      _getListings = _listing.getListings(
+        merchantId: _profile.data["accountId"],
+      );
     });
   }
 
@@ -42,7 +47,9 @@ class _MerchantPostedItemsState extends State<MerchantPostedItems> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    _getListings = _listing.getListings();
+    _getListings = _listing.getListings(
+      merchantId: _profile.data["accountId"],
+    );
   }
 
   @override
@@ -215,9 +222,9 @@ class _MerchantPostedItemsState extends State<MerchantPostedItems> {
                                       ],
                                     ),
                                     Text(
-                                      "PHP $_price",
+                                      "P$_price",
                                       style: GoogleFonts.robotoMono(
-                                        fontSize: 22.0,
+                                        fontSize: 17.0,
                                         fontWeight: FontWeight.bold,
                                         color: kDanger,
                                       ),

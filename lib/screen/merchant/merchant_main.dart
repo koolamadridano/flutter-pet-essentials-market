@@ -1,11 +1,15 @@
 import 'package:app/const/colors.dart';
 import 'package:app/const/material.dart';
+import 'package:app/controllers/orderController.dart';
 import 'package:app/controllers/profileController.dart';
 import 'package:app/controllers/userController.dart';
+import 'package:app/widget/snapshot.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:jiffy/jiffy.dart';
 
 class MerchantMain extends StatefulWidget {
   const MerchantMain({Key? key}) : super(key: key);
@@ -18,6 +22,36 @@ class _MerchantMainState extends State<MerchantMain> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey();
   final _profile = Get.put(ProfileController());
   final _user = Get.put(UserController());
+  final _order = Get.put(OrderController());
+
+  late Future _getOrders;
+
+  Future<void> onRefreshOrders(query) async {
+    setState(() {
+      _getOrders = _order.getCustomerOrders(query);
+    });
+  }
+
+  int _calculateTotal(items) {
+    int total = 0; //reset
+    for (var item in items) {
+      final _qty = item["qty"];
+      final _price = int.parse(item["price"]);
+      final _sum = _qty * _price;
+      total += _sum as int;
+    }
+    return total;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _getOrders = _order.getCustomerOrders({
+      "accountId": _profile.data["accountId"],
+      "accountType": "merchant",
+      "status": "to-pack",
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,14 +142,14 @@ class _MerchantMainState extends State<MerchantMain> {
           // ),
           // const Divider(),
           ListTile(
-            onTap: () => _user.logout(),
+            onTap: () => Get.toNamed("/merchant-orders"),
             leading: const Icon(
               Ionicons.receipt_outline,
               size: 20.0,
               color: kDark,
             ),
             title: Text(
-              "My Orders",
+              "Customer Orders",
               style: GoogleFonts.chivo(
                 fontSize: 14.0,
                 color: kDark,
@@ -172,7 +206,6 @@ class _MerchantMainState extends State<MerchantMain> {
         ],
       ),
     );
-
     final _containerAddItem = Expanded(
       child: GestureDetector(
         onTap: () => Get.toNamed("/merchant-additem"),
@@ -217,7 +250,7 @@ class _MerchantMainState extends State<MerchantMain> {
     );
     final _containerMyOrders = Expanded(
       child: GestureDetector(
-        onTap: () {},
+        onTap: () => Get.toNamed("/merchant-orders"),
         child: Container(
           decoration: const BoxDecoration(
             color: Colors.deepPurple,
@@ -302,7 +335,7 @@ class _MerchantMainState extends State<MerchantMain> {
       onWillPop: () async => false,
       child: Scaffold(
         key: _scaffoldKey,
-        backgroundColor: kWhite,
+        backgroundColor: kLight,
         appBar: _appBar,
         drawer: _drawer,
         body: Container(
@@ -318,7 +351,186 @@ class _MerchantMainState extends State<MerchantMain> {
                 ],
               ),
               const SizedBox(height: 5.0),
-              _containerPosteItems
+              _containerPosteItems,
+              const SizedBox(height: 10.0),
+              Expanded(
+                child: FutureBuilder(
+                  future: _getOrders,
+                  builder: (context, AsyncSnapshot snapshot) {
+                    if (snapshot.connectionState == ConnectionState.none) {
+                      return snapshotSpinner();
+                    }
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return snapshotSpinner();
+                    }
+                    if (snapshot.data == null) {
+                      return snapshotSpinner();
+                    }
+                    if (snapshot.connectionState == ConnectionState.done) {
+                      if (snapshot.data.length == 0) {
+                        return snapshotEmptyMessage(
+                          "You have no pending\norders available.",
+                        );
+                      }
+                    }
+
+                    return RefreshIndicator(
+                      onRefresh: () => onRefreshOrders({
+                        "accountId": _profile.data["accountId"],
+                        "accountType": "merchant",
+                        "status": "to-pack",
+                      }),
+                      child: ListView.builder(
+                        itemCount: snapshot.data.length,
+                        itemBuilder: (context, index) {
+                          final _customerName = snapshot.data[index]["header"]
+                                  ["customer"]["firstName"] +
+                              " " +
+                              snapshot.data[index]["header"]["customer"]
+                                  ["lastName"];
+                          final _dateOrdered =
+                              snapshot.data[index]["date"]["createdAt"];
+                          return GestureDetector(
+                            onTap: () => Get.toNamed("/merchant-orders"),
+                            child: Container(
+                              margin: EdgeInsets.only(top: index == 0 ? 0 : 10),
+                              padding: const EdgeInsets.all(25.0),
+                              decoration: const BoxDecoration(
+                                color: kWhite,
+                                borderRadius: kDefaultRadius,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      SizedBox(
+                                        width: 250.0,
+                                        child: Text(
+                                          _customerName,
+                                          style: GoogleFonts.roboto(
+                                            color: kDark,
+                                            fontSize: 15.0,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 250.0,
+                                        child: Text(
+                                          Jiffy(_dateOrdered)
+                                              .startOf(Units.SECOND)
+                                              .fromNow(),
+                                          style: GoogleFonts.roboto(
+                                            fontSize: 12.0,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  ListView.builder(
+                                    itemCount: snapshot
+                                        .data[index]["content"]["items"].length,
+                                    itemBuilder: (context, imgIndex) {
+                                      final _title = snapshot.data[index]
+                                              ["content"]["items"][imgIndex]
+                                          ["title"];
+                                      final _qty = snapshot.data[index]
+                                          ["content"]["items"][imgIndex]["qty"];
+                                      final _price = int.parse(
+                                          snapshot.data[index]["content"]
+                                              ["items"][imgIndex]["price"]);
+
+                                      final _subTotal = _qty * _price;
+                                      return Container(
+                                        margin:
+                                            const EdgeInsets.only(top: 10.0),
+                                        height: 100.0,
+                                        child: Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              ClipRRect(
+                                                borderRadius: kDefaultRadius,
+                                                child: CachedNetworkImage(
+                                                  imageUrl: snapshot.data[index]
+                                                              ["content"]
+                                                          ["items"][imgIndex]
+                                                      ["images"][0]["url"],
+                                                  placeholder: (context, url) =>
+                                                      Container(
+                                                    color: kLight,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 15),
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  SizedBox(
+                                                    width: 150,
+                                                    child: Text(
+                                                      _title,
+                                                      style: GoogleFonts.roboto(
+                                                        color: kDark,
+                                                        fontSize: 14.0,
+                                                      ),
+                                                      maxLines: 2,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 15),
+                                                  Text(
+                                                    "Quantity: x$_qty",
+                                                    style: GoogleFonts.roboto(
+                                                      color: kDark,
+                                                      fontSize: 14.0,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    "Subtotal: P$_subTotal",
+                                                    style:
+                                                        GoogleFonts.robotoMono(
+                                                      fontSize: 14.0,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color: kDanger,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                        physics: const BouncingScrollPhysics(
+                          parent: AlwaysScrollableScrollPhysics(),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ],
           ),
         ),

@@ -12,6 +12,7 @@ import 'package:app/screen/customer/sub/customer_view_product.dart';
 import 'package:app/screen/loading.dart';
 import 'package:app/screen/merchant/merchant_main.dart';
 import 'package:app/screen/merchant/sub/merchant_addItem.dart';
+import 'package:app/screen/merchant/sub/merchant_orders.dart';
 import 'package:app/screen/merchant/sub/merchant_postedItems.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -71,6 +72,10 @@ final List<GetPage<dynamic>> merchant = [
   GetPage(
     name: "/merchant-posteditems",
     page: () => const MerchantPostedItems(),
+  ),
+  GetPage(
+    name: "/merchant-orders",
+    page: () => const MerchantOrders(),
   ),
 ];
 final List<GetPage<dynamic>> registration = [

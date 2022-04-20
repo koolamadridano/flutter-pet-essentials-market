@@ -75,6 +75,14 @@ class _CustomerViewProductState extends State<CustomerViewProduct> {
     });
   }
 
+  Future<void> onSelectListing(data) async {
+    _listing.selectedListing = data;
+    Get.toNamed(
+      "/customer-view-product",
+      preventDuplicates: false,
+    );
+  }
+
   @override
   void initState() {
     // TODO: implement initState
@@ -184,7 +192,7 @@ class _CustomerViewProductState extends State<CustomerViewProduct> {
                           ),
                         ),
                         Text(
-                          "PHP ${_listing.selectedListing["price"]}",
+                          "P${_listing.selectedListing["price"]}.00",
                           style: GoogleFonts.rajdhani(
                             fontSize: 20.0,
                             fontWeight: FontWeight.bold,
@@ -294,6 +302,7 @@ class _CustomerViewProductState extends State<CustomerViewProduct> {
                     return const SizedBox();
                   }
                 }
+
                 return Container(
                   margin: kDefaultBodyMargin,
                   child: RefreshIndicator(
@@ -315,7 +324,7 @@ class _CustomerViewProductState extends State<CustomerViewProduct> {
                         final _price = snapshot.data[index]["price"];
 
                         return GestureDetector(
-                          onTap: () {},
+                          onTap: () => onSelectListing(snapshot.data[index]),
                           child: Container(
                             color: kWhite,
                             child: Column(

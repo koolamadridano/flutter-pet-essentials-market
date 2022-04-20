@@ -2,6 +2,7 @@ import 'package:app/const/colors.dart';
 import 'package:app/const/material.dart';
 import 'package:app/controllers/orderController.dart';
 import 'package:app/controllers/profileController.dart';
+import 'package:app/widget/bottomsheet.dart';
 import 'package:app/widget/snapshot.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -10,14 +11,14 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:jiffy/jiffy.dart';
 
-class CustomerOrders extends StatefulWidget {
-  const CustomerOrders({Key? key}) : super(key: key);
+class MerchantOrders extends StatefulWidget {
+  const MerchantOrders({Key? key}) : super(key: key);
 
   @override
-  State<CustomerOrders> createState() => _CustomerOrdersState();
+  State<MerchantOrders> createState() => _MerchantOrdersState();
 }
 
-class _CustomerOrdersState extends State<CustomerOrders>
+class _MerchantOrdersState extends State<MerchantOrders>
     with SingleTickerProviderStateMixin {
   final _order = Get.put(OrderController());
   final _profile = Get.put(ProfileController());
@@ -25,12 +26,26 @@ class _CustomerOrdersState extends State<CustomerOrders>
   TabController? _tabController;
   late Future _getOrders;
 
+  final List<String> _buttonTtitle = ["Packed", "To Deliver", "Delivered"];
   final List<Map> _tabTitle = [
     {"title": "To Pack", "tag": "to-pack"},
     {"title": "Packed", "tag": "pack"},
     {"title": "To Deliver", "tag": "to-deliver"},
     {"title": "Delivered", "tag": "delivered"},
   ];
+
+  Future<void> onMoveOrder(query) async {
+    bottomSheet(
+      type: BottomSheetType.toast,
+      message: "Updating order status, Please wait.",
+    );
+    await _order.updateOrderStatus(
+      id: query["_id"],
+      prevStatus: query["status"],
+    );
+    await onRefreshOrders(query);
+    Get.back();
+  }
 
   Future<void> onRefreshOrders(query) async {
     setState(() {
@@ -55,7 +70,7 @@ class _CustomerOrdersState extends State<CustomerOrders>
     _tabController = TabController(length: 4, vsync: this);
     _getOrders = _order.getCustomerOrders({
       "accountId": _profile.data["accountId"],
-      "accountType": "customer",
+      "accountType": "merchant",
       "status": "to-pack",
     });
   }
@@ -71,14 +86,14 @@ class _CustomerOrdersState extends State<CustomerOrders>
   Widget build(BuildContext context) {
     final _appBar = AppBar(
       title: Text(
-        "My Orders",
+        "Customer Orders",
         style: GoogleFonts.chivo(
           fontSize: 16.0,
           color: kDark,
         ),
       ),
       leading: IconButton(
-        onPressed: () => Get.toNamed("/customer-main"),
+        onPressed: () => Get.toNamed("/merchant-main"),
         splashRadius: 20.0,
         icon: const Icon(
           AntDesign.arrowleft,
@@ -110,28 +125,28 @@ class _CustomerOrdersState extends State<CustomerOrders>
                 if (index == 0) {
                   onRefreshOrders({
                     "accountId": _profile.data["accountId"],
-                    "accountType": "customer",
+                    "accountType": "merchant",
                     "status": "to-pack",
                   });
                 }
                 if (index == 1) {
                   onRefreshOrders({
                     "accountId": _profile.data["accountId"],
-                    "accountType": "customer",
+                    "accountType": "merchant",
                     "status": "packed",
                   });
                 }
                 if (index == 2) {
                   onRefreshOrders({
                     "accountId": _profile.data["accountId"],
-                    "accountType": "customer",
+                    "accountType": "merchant",
                     "status": "to-deliver",
                   });
                 }
                 if (index == 3) {
                   onRefreshOrders({
                     "accountId": _profile.data["accountId"],
-                    "accountType": "customer",
+                    "accountType": "merchant",
                     "status": "delivered",
                   });
                 }
@@ -170,14 +185,12 @@ class _CustomerOrdersState extends State<CustomerOrders>
               );
             }
           }
-
           return ListView.builder(
             itemCount: snapshot.data.length,
             itemBuilder: (context, index) {
-              final _merchantName =
-                  snapshot.data[index]["header"]["merchant"]["name"];
-              final _merchantAddress =
-                  snapshot.data[index]["header"]["merchant"]["address"];
+              final _orderId = snapshot.data[index]["_id"];
+              final _orderStatus = snapshot.data[index]["status"];
+
               final _customerName = snapshot.data[index]["header"]["customer"]
                       ["firstName"] +
                   " " +
@@ -191,71 +204,48 @@ class _CustomerOrdersState extends State<CustomerOrders>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      _merchantName,
-                      style: GoogleFonts.roboto(
-                        color: kDark,
-                        fontSize: 16.0,
-                      ),
-                    ),
-                    Text(
-                      _merchantAddress,
-                      style: GoogleFonts.roboto(
-                        color: kDark.withOpacity(0.5),
-                        fontSize: 14.0,
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: kDefaultRadius,
-                        border: Border.all(
-                          color: kDark.withOpacity(0.5),
-                          width: 1.0,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 250.0,
+                          child: Text(
+                            "Receiver",
+                            style: GoogleFonts.roboto(
+                              color: kDark,
+                              fontSize: 12.0,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
                         ),
-                      ),
-                      padding: const EdgeInsets.all(15.0),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            AntDesign.idcard,
-                            color: kDark,
+                        const SizedBox(height: 5),
+                        SizedBox(
+                          width: 250.0,
+                          child: Text(
+                            _customerName,
+                            style: GoogleFonts.roboto(
+                              color: kDark,
+                              fontSize: 15.0,
+                              fontWeight: FontWeight.w400,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(width: 15),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              SizedBox(
-                                width: 250.0,
-                                child: Text(
-                                  _customerName,
-                                  style: GoogleFonts.roboto(
-                                    color: kDark,
-                                    fontSize: 12.0,
-                                  ),
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              SizedBox(
-                                width: 250.0,
-                                child: Text(
-                                  _customerAddress,
-                                  style: GoogleFonts.roboto(
-                                    color: kDark.withOpacity(0.5),
-                                    fontSize: 10.0,
-                                  ),
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
+                        ),
+                        SizedBox(
+                          width: 250.0,
+                          child: Text(
+                            _customerAddress,
+                            style: GoogleFonts.roboto(
+                              color: kDark.withOpacity(0.5),
+                              fontSize: 12.0,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 25),
                     ListView.builder(
@@ -268,7 +258,6 @@ class _CustomerOrdersState extends State<CustomerOrders>
                             [imgIndex]["qty"];
                         final _price = int.parse(snapshot.data[index]["content"]
                             ["items"][imgIndex]["price"]);
-
                         final _subTotal = _qty * _price;
                         return Container(
                           margin: const EdgeInsets.only(top: 10.0),
@@ -390,28 +379,60 @@ class _CustomerOrdersState extends State<CustomerOrders>
                           )
                         : const SizedBox(),
                     snapshot.data[index]["status"] != "delivered"
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 25),
-                              const Divider(),
-                              const SizedBox(height: 10),
-                              Text(
-                                "AMOUNT TO PAY",
-                                style: GoogleFonts.roboto(
-                                  color: kDark.withOpacity(0.5),
-                                  fontSize: 10.0,
+                        ? Container(
+                            margin: const EdgeInsets.only(top: 25.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                SizedBox(
+                                  height: 50,
+                                  width: 150,
+                                  child: TextButton(
+                                    onPressed: () => onMoveOrder({
+                                      "_id": _orderId,
+                                      "accountId": _profile.data["accountId"],
+                                      "accountType": "merchant",
+                                      "status": _orderStatus,
+                                    }),
+                                    style: TextButton.styleFrom(
+                                      //primary: kFadeWhite,
+                                      backgroundColor: Colors.deepOrange,
+                                      shape: const RoundedRectangleBorder(
+                                        borderRadius: kDefaultRadius,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      _buttonTtitle[_tabController!.index],
+                                      style: GoogleFonts.roboto(
+                                        fontSize: 14.0,
+                                        fontWeight: FontWeight.w400,
+                                        color: kWhite,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                "P${_calculateTotal(snapshot.data[index]["content"]["items"])}.00",
-                                style: GoogleFonts.robotoMono(
-                                  fontSize: 18.0,
-                                  fontWeight: FontWeight.bold,
-                                  color: kDanger,
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      "TOTAL",
+                                      style: GoogleFonts.roboto(
+                                        color: kDark.withOpacity(0.5),
+                                        fontSize: 10.0,
+                                      ),
+                                    ),
+                                    Text(
+                                      "P${_calculateTotal(snapshot.data[index]["content"]["items"])}.00",
+                                      style: GoogleFonts.robotoMono(
+                                        fontSize: 18.0,
+                                        fontWeight: FontWeight.bold,
+                                        color: kDanger,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           )
                         : const SizedBox(),
                   ],

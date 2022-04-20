@@ -23,6 +23,7 @@ class _CustomerShoppingCartState extends State<CustomerShoppingCart> {
   final _profile = Get.put(ProfileController());
 
   late Future _getMerchant;
+  bool isCheckingOut = false;
 
   Future<void> onDeleteFromCart(id) async {
     _cart.remove(id);
@@ -35,6 +36,9 @@ class _CustomerShoppingCartState extends State<CustomerShoppingCart> {
   }
 
   Future<void> onCheckout() async {
+    setState(() {
+      isCheckingOut = true;
+    });
     final _cartMerchantId = _cart.items[0]["accountId"];
     final _merchantProfile = await _profile.getMerchantProfile(_cartMerchantId);
     Map data = {
@@ -67,6 +71,9 @@ class _CustomerShoppingCartState extends State<CustomerShoppingCart> {
     );
     await _cart.chekoutCart(data);
     Get.toNamed("/customer-orders");
+    setState(() {
+      isCheckingOut = false;
+    });
   }
 
   @override
@@ -408,7 +415,7 @@ class _CustomerShoppingCartState extends State<CustomerShoppingCart> {
                                               MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(
-                                              "P${int.parse(_price) * _qty}",
+                                              "P${int.parse(_price) * _qty}.00",
                                               style: GoogleFonts.robotoMono(
                                                 fontSize: 17.0,
                                                 fontWeight: FontWeight.bold,
@@ -473,68 +480,75 @@ class _CustomerShoppingCartState extends State<CustomerShoppingCart> {
           ),
           bottomNavigationBar: BottomAppBar(
             elevation: 0,
-            child: Container(
-              padding: const EdgeInsets.all(15.0),
-              height: 80.0,
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: kDark.withOpacity(0.2),
-                    width: 0.5,
-                  ),
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "SUBTOTAL: P${_cart.total.value}",
-                        style: GoogleFonts.robotoMono(
-                          fontSize: 15.0,
-                          fontWeight: FontWeight.bold,
-                          color: kDark,
-                          height: 0.8,
-                        ),
+            child: AnimatedOpacity(
+              duration: const Duration(seconds: 1),
+              opacity: isCheckingOut ? 0.3 : 1,
+              child: IgnorePointer(
+                ignoring: isCheckingOut ? true : false,
+                child: Container(
+                  padding: const EdgeInsets.all(15.0),
+                  height: 80.0,
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(
+                        color: kDark.withOpacity(0.2),
+                        width: 0.5,
                       ),
-                      const SizedBox(height: 5),
-                      Text(
-                        "Shipping Fee: Free",
-                        style: GoogleFonts.roboto(
-                          fontSize: 10.0,
-                          fontWeight: FontWeight.w400,
-                          color: kDark,
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "SUBTOTAL: P${_cart.total.value}.00",
+                            style: GoogleFonts.robotoMono(
+                              fontSize: 15.0,
+                              fontWeight: FontWeight.bold,
+                              color: kDark,
+                              height: 0.8,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            "Shipping Fee: Free",
+                            style: GoogleFonts.roboto(
+                              fontSize: 10.0,
+                              fontWeight: FontWeight.w400,
+                              color: kDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 50,
+                        width: 150,
+                        child: TextButton(
+                          onPressed: () => onCheckout(),
+                          style: TextButton.styleFrom(
+                            //primary: kFadeWhite,
+                            backgroundColor: kPrimary,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: kDefaultRadius,
+                            ),
+                          ),
+                          child: Text(
+                            "CHECKOUT",
+                            style: GoogleFonts.roboto(
+                              fontSize: 14.0,
+                              fontWeight: FontWeight.w400,
+                              color: kWhite,
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(
-                    height: 50,
-                    width: 150,
-                    child: TextButton(
-                      onPressed: () => onCheckout(),
-                      style: TextButton.styleFrom(
-                        //primary: kFadeWhite,
-                        backgroundColor: kPrimary,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: kDefaultRadius,
-                        ),
-                      ),
-                      child: Text(
-                        "CHECKOUT",
-                        style: GoogleFonts.roboto(
-                          fontSize: 14.0,
-                          fontWeight: FontWeight.w400,
-                          color: kWhite,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),

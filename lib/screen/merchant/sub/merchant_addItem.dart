@@ -60,6 +60,7 @@ class _MwerchantAddItemState extends State<MwerchantAddItem> {
       "stocksQuantity": _stocksQuantity,
       "availability": true
     });
+    destroyTextFieldFocus(context);
     Get.back();
     Future.delayed(const Duration(milliseconds: 500), () {
       bottomSheet(

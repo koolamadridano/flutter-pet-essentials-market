@@ -21,9 +21,9 @@ Widget snapshotEmptyMessage(message) {
     child: Text(
       message,
       style: GoogleFonts.roboto(
-        color: kDark,
+        color: kDark.withOpacity(0.5),
         fontWeight: FontWeight.w300,
-        fontSize: 14.0,
+        fontSize: 12.0,
       ),
       textAlign: TextAlign.center,
     ),

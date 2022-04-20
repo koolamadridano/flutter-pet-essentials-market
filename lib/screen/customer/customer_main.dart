@@ -41,7 +41,7 @@ class _CustomerMainState extends State<CustomerMain> {
 
   Future<void> onKeywordChange() async {
     final _keyword = _searchKeywordController.text.trim();
-    if (_keyword.isEmpty) return;
+    if (_keyword.isEmpty) return onRefreshListings();
     setState(() {
       _getListings = _listing.searchListings(_keyword);
     });
@@ -295,7 +295,8 @@ class _CustomerMainState extends State<CustomerMain> {
                             child: Container(
                               color: kWhite,
                               child: Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   SizedBox(
                                     width: 200.0,
@@ -321,7 +322,7 @@ class _CustomerMainState extends State<CustomerMain> {
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         Text(
-                                          "PHP $_price",
+                                          "P$_price.00",
                                           style: GoogleFonts.rajdhani(
                                             fontSize: 20.0,
                                             fontWeight: FontWeight.bold,
